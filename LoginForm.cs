@@ -157,27 +157,9 @@ namespace TBUProject
             // Field 1: Email/ID TextBox (Custom Rounded)
             txtEmail = new RoundedTextBox();
             txtEmail.LeftIconType = "user";
-            txtEmail.Text = "Mã Giảng Viên";
-            txtEmail.ForeColor = Color.Gray;
-            txtEmail.Font = new Font("Segoe UI", 10f, FontStyle.Italic);
+            txtEmail.PlaceholderText = "Mã Giảng Viên";
             txtEmail.Location = new Point(40, 175);
             txtEmail.Size = new Size(320, 38);
-            
-            // Xử lý sự kiện giả lập Placeholder
-            txtEmail.GotFocus += (s, e) => { 
-                if (txtEmail.Text == "Mã Giảng Viên") { 
-                    txtEmail.Text = ""; 
-                    txtEmail.ForeColor = Color.Black; 
-                    txtEmail.Font = new Font("Segoe UI", 10f, FontStyle.Regular);
-                } 
-            };
-            txtEmail.LostFocus += (s, e) => { 
-                if (string.IsNullOrWhiteSpace(txtEmail.Text)) { 
-                    txtEmail.Text = "Mã Giảng Viên"; 
-                    txtEmail.ForeColor = Color.Gray; 
-                    txtEmail.Font = new Font("Segoe UI", 10f, FontStyle.Italic);
-                } 
-            };
 
             // Field 2: Password Label
             lblPassword = new Label();
@@ -186,14 +168,14 @@ namespace TBUProject
             lblPassword.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
             lblPassword.AutoSize = true;
             lblPassword.Location = new Point(40, 230);
-
+ 
             // Field 2: Password TextBox (Custom Rounded)
             txtPassword = new RoundedTextBox();
             txtPassword.LeftIconType = "lock";
-            txtPassword.Font = new Font("Segoe UI", 10f, FontStyle.Regular);
+            txtPassword.PlaceholderText = "Mật Khẩu";
             txtPassword.Location = new Point(40, 255);
             txtPassword.Size = new Size(320, 38);
-            txtPassword.UseSystemPasswordChar = true;
+            txtPassword.UseSystemPasswordChar = true; // Luôn ẩn ký tự để bảo mật khi người dùng gõ
             txtPassword.ShowEyeIcon = true; // Hiện biểu tượng con mắt
 
             // LinkLabel: Forgot Password?
@@ -226,6 +208,7 @@ namespace TBUProject
             btnSignIn.Size = new Size(320, 48);
             btnSignIn.Cursor = Cursors.Hand;
             btnSignIn.BorderRadius = 10; // Bo góc mượt hơn cho button
+            btnSignIn.Click += BtnSignIn_Click;
 
             // Footer Text in Right Panel
             lblTerms = new Label();
@@ -258,6 +241,72 @@ namespace TBUProject
 
             // Ngăn tự động focus vào textbox để hiện placeholder ngay từ đầu
             this.ActiveControl = null;
+        }
+
+        private void BtnSignIn_Click(object? sender, EventArgs e)
+        {
+            string maGV = txtEmail.Text.Trim();
+            string password = txtPassword.Text;
+
+            if (string.IsNullOrEmpty(maGV) || maGV == "Mã Giảng Viên")
+            {
+                MessageBox.Show("Vui lòng nhập Mã Giảng Viên!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(password) || password == "Mật Khẩu")
+            {
+                MessageBox.Show("Vui lòng nhập Mật Khẩu!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                // Thực hiện kiểm tra thông tin trong CSDL
+                string query = "SELECT ma_giang_vien, ten_giang_vien, ma_chuc_vu FROM giang_vien WHERE ma_giang_vien = @maGV AND mat_khau = @password";
+                var parameters = new Microsoft.Data.SqlClient.SqlParameter[]
+                {
+                    new Microsoft.Data.SqlClient.SqlParameter("@maGV", maGV),
+                    new Microsoft.Data.SqlClient.SqlParameter("@password", password)
+                };
+
+                var dt = DatabaseHelper.ExecuteQuery(query, parameters);
+
+                if (dt.Rows.Count > 0)
+                {
+                    string tenGV = dt.Rows[0]["ten_giang_vien"].ToString() ?? "Giảng viên";
+                    string maChucVu = dt.Rows[0]["ma_chuc_vu"].ToString() ?? "";
+                    
+                    // Lấy tên chức vụ từ ma_chuc_vu
+                    string tenChucVu = "Giảng viên";
+                    if (!string.IsNullOrEmpty(maChucVu))
+                    {
+                        var dtChucVu = DatabaseHelper.ExecuteQuery(
+                            "SELECT ten_chuc_vu FROM chuc_vu WHERE ma_chuc_vu = @maChucVu",
+                            new Microsoft.Data.SqlClient.SqlParameter[] { new Microsoft.Data.SqlClient.SqlParameter("@maChucVu", maChucVu) }
+                        );
+                        if (dtChucVu.Rows.Count > 0)
+                        {
+                            tenChucVu = dtChucVu.Rows[0]["ten_chuc_vu"].ToString() ?? "Giảng viên";
+                        }
+                    }
+
+                    this.Hide();
+                    using (var menuForm = new MenuForm(maGV, tenGV, tenChucVu))
+                    {
+                        menuForm.ShowDialog();
+                    }
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show("Mã Giảng Viên hoặc Mật Khẩu không chính xác!", "Đăng Nhập Thất Bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi kết nối cơ sở dữ liệu:\n" + ex.Message, "Lỗi Hệ Thống", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // ---------------------------------------------------------
@@ -391,8 +440,10 @@ namespace TBUProject
         {
             private TextBox textBox;
             private Panel lblEye;
+            private Label lblPlaceholder;
             private bool isPasswordHidden = true;
             private string leftIconType = "";
+            private string placeholderText = "";
 
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public int BorderRadius { get; set; } = 8;
@@ -400,7 +451,15 @@ namespace TBUProject
             public Color BorderColor { get; set; } = ColorTranslator.FromHtml("#E2E8F0");
             
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-            public override string? Text { get => textBox.Text; set => textBox.Text = value ?? ""; }
+            public override string? Text 
+            { 
+                get => textBox.Text; 
+                set 
+                { 
+                    textBox.Text = value ?? ""; 
+                    UpdatePlaceholderVisibility(); 
+                } 
+            }
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
             public override Font? Font { get => base.Font; set { base.Font = value; textBox.Font = value; } }
             [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -417,6 +476,18 @@ namespace TBUProject
                     leftIconType = value;
                     UpdateLayout();
                     this.Invalidate();
+                }
+            }
+
+            [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+            public string PlaceholderText
+            {
+                get => placeholderText;
+                set
+                {
+                    placeholderText = value;
+                    lblPlaceholder.Text = value;
+                    UpdatePlaceholderVisibility();
                 }
             }
 
@@ -442,6 +513,18 @@ namespace TBUProject
                 this.Size = new Size(320, 38);
                 textBox.Width = this.Width - 24; // Đảm bảo TextBox đủ rộng ngay từ đầu
                 this.Controls.Add(textBox);
+
+                // Label hiển thị chữ gợi ý (Placeholder)
+                lblPlaceholder = new Label();
+                lblPlaceholder.ForeColor = Color.Gray;
+                lblPlaceholder.Font = new Font("Segoe UI", 10f, FontStyle.Italic);
+                lblPlaceholder.BackColor = Color.Transparent;
+                lblPlaceholder.AutoSize = true;
+                lblPlaceholder.Cursor = Cursors.IBeam;
+                lblPlaceholder.Location = new Point(12, 10);
+                lblPlaceholder.Click += (s, e) => textBox.Focus();
+                this.Controls.Add(lblPlaceholder);
+                lblPlaceholder.BringToFront();
 
                 // Icon con mắt (Vẽ bằng GDI+ cho sắc nét và hiện đại)
                 lblEye = new Panel();
@@ -474,16 +557,32 @@ namespace TBUProject
                 lblEye.Click += (s, e) => {
                     isPasswordHidden = !isPasswordHidden;
                     textBox.UseSystemPasswordChar = isPasswordHidden;
-                    // Giữ nguyên biểu tượng theo yêu cầu người dùng
                 };
                 this.Controls.Add(lblEye);
                 lblEye.BringToFront();
 
                 // Đồng bộ sự kiện focus để vẽ lại viền (nếu muốn đổi màu khi focus)
-                textBox.GotFocus += (s, e) => { BorderColor = ColorTranslator.FromHtml("#3182CE"); this.Invalidate(); };
-                textBox.LostFocus += (s, e) => { BorderColor = ColorTranslator.FromHtml("#E2E8F0"); this.Invalidate(); };
+                textBox.GotFocus += (s, e) => { 
+                    BorderColor = ColorTranslator.FromHtml("#3182CE"); 
+                    this.Invalidate(); 
+                    UpdatePlaceholderVisibility();
+                };
+                textBox.LostFocus += (s, e) => { 
+                    BorderColor = ColorTranslator.FromHtml("#E2E8F0"); 
+                    this.Invalidate(); 
+                    UpdatePlaceholderVisibility();
+                };
+                textBox.TextChanged += (s, e) => {
+                    UpdatePlaceholderVisibility();
+                };
                 
                 UpdateLayout();
+            }
+
+            private void UpdatePlaceholderVisibility()
+            {
+                if (lblPlaceholder == null || textBox == null) return;
+                lblPlaceholder.Visible = string.IsNullOrEmpty(placeholderText) ? false : (string.IsNullOrEmpty(textBox.Text) && !textBox.Focused);
             }
 
             private void UpdateLayout()
@@ -504,6 +603,11 @@ namespace TBUProject
 
                 textBox.Location = new Point(leftPadding, 10);
                 textBox.Width = this.Width - leftPadding - rightPadding;
+
+                if (lblPlaceholder != null)
+                {
+                    lblPlaceholder.Location = new Point(leftPadding, 10);
+                }
             }
 
             protected override void OnResize(EventArgs e)

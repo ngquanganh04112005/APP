@@ -6,22 +6,28 @@ using System.ComponentModel;
 
 namespace TBUProject
 {
-    public class TrangChuForm : Form
+    public class MenuForm : Form
     {
         private Panel pnlMainArea;
         private System.Collections.Generic.List<Panel> sidebarButtons = new System.Collections.Generic.List<Panel>();
         private string[] menuItems = { 
             "🏠 Trang Chủ", 
-            "📖 Duyệt đồ án", 
-            "📅 Điểm", 
-            "📈 Tiến độ", 
-            "🖥️ Quản lý đồ án", 
-            "👥 Nhóm đang hướng dẫn",
+            "👨‍🎓 Sinh viên", 
+            "👨‍🏫 Giảng viên", 
+            "📁 Đồ án", 
             "📢 Thông báo"
         };
 
-        public TrangChuForm()
+        private string loggedInMaGV;
+        private string loggedInTenGV;
+        private string loggedInChucVu;
+
+        public MenuForm(string maGV = "GV001", string tenGV = "Nguyễn Văn A", string chucVu = "Giảng viên")
         {
+            this.loggedInMaGV = maGV;
+            this.loggedInTenGV = tenGV;
+            this.loggedInChucVu = chucVu;
+
             this.Text = "Hệ thống Quản lý Đồ án - TBU";
             this.ClientSize = new Size(1280, 800);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -87,14 +93,14 @@ namespace TBUProject
             lblAvatar.Location = new Point(10, 10);
             
             Label lblName = new Label();
-            lblName.Text = "Dr. Nguyễn Văn A";
+            lblName.Text = loggedInTenGV;
             lblName.ForeColor = Color.White;
             lblName.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
             lblName.Location = new Point(60, 12);
             lblName.AutoSize = true;
 
             Label lblRole = new Label();
-            lblRole.Text = "Trưởng khoa CNTT";
+            lblRole.Text = loggedInChucVu;
             lblRole.ForeColor = ColorTranslator.FromHtml("#A0AEC0");
             lblRole.Font = new Font("Segoe UI", 8.5f, FontStyle.Regular);
             lblRole.Location = new Point(60, 32);
@@ -185,10 +191,10 @@ namespace TBUProject
             }
             else if (index == 2)
             {
-                QuanLyDiemControl gradesControl = new QuanLyDiemControl();
-                pnlMainArea.Controls.Add(gradesControl);
+                GiangVienControl advisorControl = new GiangVienControl();
+                pnlMainArea.Controls.Add(advisorControl);
             }
-            else if (index == 4)
+            else if (index == 3)
             {
                 QuanLyDoAnControl projectControl = new QuanLyDoAnControl();
                 pnlMainArea.Controls.Add(projectControl);

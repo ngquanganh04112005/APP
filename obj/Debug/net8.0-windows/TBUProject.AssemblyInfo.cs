@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TBUProject")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0fe7dcad247bcd0b8f92a113e8fb5563be66a5af")]
 [assembly: System.Reflection.AssemblyProductAttribute("TBUProject")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TBUProject")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
